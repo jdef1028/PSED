@@ -2,7 +2,7 @@ from __future__ import print_function
 from keras.models import Sequential
 from keras.layers import Conv2D, Conv2DTranspose, BatchNormalization, LeakyReLU
 from keras.initializers import Zeros, RandomNormal, RandomUniform
-
+from keras.optimizers import Adam
 # input tensor dimensions
 Z_l = 2
 Z_m = 2
@@ -31,6 +31,9 @@ print("The dimension of the cropped image is: (" + str(X_l) + " x " + str(X_m) +
 
 #batch parameters
 batch_size = 64
+
+# optimization paramters
+adam_opt = Adam(lr=0.0005, beta_1=0.5, epsilon=1e-7)
 
 class SGAN(object):
 	def __init__(self):
@@ -63,7 +66,7 @@ class SGAN(object):
 							 )
 					 )
 			self.generator.add(BatchNormalization(beta_initializer='zeros',
-										 gamma_initializer='ones'))
+										 gamma_initializer=RandomNormal(mean=1., stddev=0.02)))
 
 		# add the last layer of the generator
 		self.generator.add(Conv2D(filters=g_filter_depths[lv],
@@ -78,10 +81,10 @@ class SGAN(object):
 		print("=== Generator built ====")
 
 		# build discriminator
-		self.discrimitor = Sequential()
+		self.discriminator = Sequential()
 		for lv in xrange(len(d_filter_sizes)-1):
 			if lv == 0:
-				self.discrimitor.add(Conv2DTranspose(filters=g_filter_depths[lv],
+				self.discriminator.add(Conv2DTranspose(filters=g_filter_depths[lv],
 							 kernel_size=g_filter_sizes[lv],
 							 padding="same",
 							 dilation_rate=(2, 2),
@@ -91,7 +94,7 @@ class SGAN(object):
 							 )
 					 )
 			else:
-				self.discrimitor.add(Conv2DTranspose(filters=g_filter_depths[lv],
+				self.discriminator.add(Conv2DTranspose(filters=g_filter_depths[lv],
 							 kernel_size=g_filter_sizes[lv],
 							 padding="same",
 							 dilation_rate=(2, 2),
@@ -99,12 +102,14 @@ class SGAN(object):
 							 bias_initializer=Zeros(),
 							 )
 					 )
-				self.discrimitor.add(LeakyReLU(alpha=0.2))
+				self.discriminator.add(LeakyReLU(alpha=0.2))
+			self.discriminator.add(BatchNormalization(beta_initializer='zeros',
+										 gamma_initializer=RandomNormal(mean=1., stddev=0.02)))
 
-		self.discrimitor.add(Conv2DTranspose(filters=g_filter_depths[lv],
+		self.discriminator.add(Conv2DTranspose(filters=g_filter_depths[lv],
 							 kernel_size=g_filter_sizes[lv],
 							 padding="same",
-							 activation='tanh',
+							 activation='sigmoid',
 							 dilation_rate=(2, 2),
 							 kernel_initializer=RandomNormal(stddev=0.02),
 							 bias_initializer=Zeros()
