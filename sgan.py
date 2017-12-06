@@ -69,8 +69,8 @@ class SGAN(object):
 										 gamma_initializer=RandomNormal(mean=1., stddev=0.02)))
 
 		# add the last layer of the generator
-		self.generator.add(Conv2D(filters=g_filter_depths[lv],
-							 kernel_size=g_filter_sizes[lv],
+		self.generator.add(Conv2D(filters=g_filter_depths[lv+1],
+							 kernel_size=g_filter_sizes[lv+1],
 							 padding="same",
 							 activation='tanh',
 							 dilation_rate=(2, 2),
@@ -106,8 +106,8 @@ class SGAN(object):
 			self.discriminator.add(BatchNormalization(beta_initializer='zeros',
 										 gamma_initializer=RandomNormal(mean=1., stddev=0.02)))
 
-		self.discriminator.add(Conv2DTranspose(filters=g_filter_depths[lv],
-							 kernel_size=g_filter_sizes[lv],
+		self.discriminator.add(Conv2DTranspose(filters=g_filter_depths[lv+1],
+							 kernel_size=g_filter_sizes[lv+1],
 							 padding="same",
 							 activation='sigmoid',
 							 dilation_rate=(2, 2),
