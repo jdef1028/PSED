@@ -1,6 +1,6 @@
 from __future__ import print_function
-from keras.models import Sequential
-from keras.layers import Conv2D, Conv2DTranspose, BatchNormalization, LeakyReLU
+from keras.models import Sequential, Model
+from keras.layers import Conv2D, Conv2DTranspose, BatchNormalization, LeakyReLU, Input
 from keras.initializers import Zeros, RandomNormal, RandomUniform
 from keras.optimizers import Adam
 from keras.regularizers import l2
@@ -45,11 +45,23 @@ class SGAN(object):
 	def _build_sgan(self):
 
 		# build generator
-		self.generator = Sequential()
+		Z_dim = (Z_l, Z_m, Z_d)
+		self.generator = self._build_generator(Z_dim)
+
+		print("=== Generator configured ====")
+
+		# build discriminator
+		img_dim = (X_l, X_m, n_channel)
+		self.discriminator = self._build_discriminator(img_dim)
+
+		print("=== Discriminator configured === ")
+
+	def _build_generator(self, Z_vector_dim):
+		# generator builder
+		generator = Sequential()
 		for lv in xrange(len(g_filter_sizes)-1): # construction all layers in generator but not the last
-			print(g_filter_sizes[lv])
 			if lv == 0:
-				self.generator.add(Conv2DTranspose(filters=g_filter_depths[lv],
+				generator.add(Conv2DTranspose(filters=g_filter_depths[lv],
 							 kernel_size=g_filter_sizes[lv],
 							 padding="same",
 							 activation='relu',
@@ -57,11 +69,11 @@ class SGAN(object):
 							 kernel_initializer=RandomNormal(stddev=0.02),
 							 kernel_regularizer=l2(regularizers_weight),
 							 bias_initializer=Zeros(),
-							 input_shape=(Z_l, Z_m, Z_d)
+							 input_shape=Z_vector_dim
 							 )
 					 )
 			else:
-				self.generator.add(Conv2DTranspose(filters=g_filter_depths[lv],
+				generator.add(Conv2DTranspose(filters=g_filter_depths[lv],
 							 kernel_size=g_filter_sizes[lv],
 							 padding="same",
 							 activation='relu',
@@ -71,11 +83,11 @@ class SGAN(object):
 							 bias_initializer=Zeros(),
 							 )
 					 )
-			self.generator.add(BatchNormalization(beta_initializer='zeros',
+			generator.add(BatchNormalization(beta_initializer='zeros',
 										 gamma_initializer=RandomNormal(mean=1., stddev=0.02)))
 
 		# add the last layer of the generator
-		self.generator.add(Conv2DTranspose(filters=g_filter_depths[lv+1],
+		generator.add(Conv2DTranspose(filters=g_filter_depths[lv+1],
 							 kernel_size=g_filter_sizes[lv+1],
 							 padding="same",
 							 activation='tanh',
@@ -85,29 +97,31 @@ class SGAN(object):
 							 bias_initializer=Zeros()
 							 )
 				 )
-		generator_output = self.generator.layers[-1].output
 
-		self.generator.compile(loss='binary_crossentropy', optimizer=adam_opt)
-		self.generator.summary()
+		generator.summary()
 
-		print("=== Generator configured ====")
+		Z_vector = Input(shape=Z_vector_dim)
 
-		# build discriminator
-		self.discriminator = Sequential()
+		X = generator(Z_vector)
+
+		return Model(Z_vector, X)
+
+	def _build_discriminator(self, img_dim):
+		discriminator = Sequential()
 		for lv in xrange(len(d_filter_sizes)-1):
 			if lv == 0:
-				self.discriminator.add(Conv2D(filters=d_filter_depths[lv],
+				discriminator.add(Conv2D(filters=d_filter_depths[lv],
 							 kernel_size=d_filter_sizes[lv],
 							 padding="same",
 							 strides=(2, 2),
 							 kernel_initializer=RandomNormal(stddev=0.02),
 							 kernel_regularizer=l2(regularizers_weight),
 							 bias_initializer=Zeros(),
-							 input_shape=(X_l, X_m, n_channel)
+							 input_shape=img_dim
 							 )
 					 )
 			else:
-				self.discriminator.add(Conv2D(filters=d_filter_depths[lv],
+				discriminator.add(Conv2D(filters=d_filter_depths[lv],
 							 kernel_size=d_filter_sizes[lv],
 							 padding="same",
 							 strides=(2, 2),
@@ -116,11 +130,12 @@ class SGAN(object):
 							 bias_initializer=Zeros(),
 							 )
 					 )
-				self.discriminator.add(LeakyReLU(alpha=0.2))
-			self.discriminator.add(BatchNormalization(beta_initializer='zeros',
+				discriminator.add(LeakyReLU(alpha=0.2))
+			discriminator.add(BatchNormalization(beta_initializer='zeros',
 										 gamma_initializer=RandomNormal(mean=1., stddev=0.02)))
 
-		self.discriminator.add(Conv2D(filters=d_filter_depths[lv+1],
+		#add the last layer to discriminator
+		discriminator.add(Conv2D(filters=d_filter_depths[lv+1],
 							 kernel_size=d_filter_sizes[lv+1],
 							 padding="same",
 							 activation='sigmoid',
@@ -130,13 +145,12 @@ class SGAN(object):
 							 bias_initializer=Zeros()
 							 )
 				 )
-		discriminator_output = self.discriminator.layers[-1].output
-		self.discriminator.compile(loss='binary_crossentropy', optimizer=adam_opt)
-		self.discriminator.summary()
-		print("=== Discriminator configured === ")
+		discriminator.summary()
 
-		# stack together generator and discriminator
+		X = Input(shape=img_dim)
+		prediction = discriminator(X)
 
+		return Model(X, prediction)
 
 
 
