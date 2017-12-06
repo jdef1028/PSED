@@ -6,10 +6,20 @@ from keras.optimizers import Adam
 from keras.regularizers import l2
 from utils import *
 import numpy as np
+import scipy.io as sio
+import os
+import datetime
+# timestamp now
+now = datetime.datetime.now()
+
 # input tensor dimensions
 Z_l = 2
 Z_m = 2
 Z_d = 100
+
+# image data specification
+data_path = './data/data.mat' #needs to be a .mat file
+data_var_name = 'image'
 
 # image channel num
 
@@ -46,6 +56,7 @@ adam_opt = Adam(lr=0.0005, beta_1=0.5, epsilon=1e-7)
 class SGAN(object):
 	def __init__(self):
 		self._build_sgan()
+		self.train()
 
 	def _build_sgan(self):
 
@@ -174,6 +185,10 @@ class SGAN(object):
 
 
 	def train(self):
+		# image data loading and preparation
+
+		img_collection=sio.loadmat(data_path)[data_var_name] #load img collections
+
 		half_batch_size = int(batch_size / 2) # fake and real data will be of half_batch_size each
 		for epoch in epoch_num:
 
@@ -181,7 +196,7 @@ class SGAN(object):
 			for discriminator_step in xrange(ratio_btwn_D_G):
 				#create minibatch
 				Z_batch = np.random.normal(0, 1, (half_batch_size, Z_l, Z_m, Z_d)) # this distribution is subject to change according to the assumption made
-				X_batch = sample_cropped_img(half_batch_size, X_l, X_m, n_channel)
+				X_batch = sample_cropped_img(img_collection, half_batch_size, X_l, X_m, n_channel)
 				fake_img_batch = self.generator.predict(Z_batch)
 
 				d_loss_fake = self.discriminator.train_on_batch(fake_img_batch, np.zeros((half_batch_size, 1)))
@@ -195,6 +210,16 @@ class SGAN(object):
 			g_loss = self.stackedGAN.train_on_batch(Z_batch, np.ones(batch_size,1))
 
 			print("Epoch %d: [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss))
+
+		dir_name = './model/'+str(now.year)+'-'+str(now.month)+'-'+str(now.day)+' '+str(now.hour)+':'+str(now.minute)
+		if not os.path.isdir(dir_name):
+			os.mkdir(dir_name)
+		self.generator.save(dir_name+'/generator.h5')
+		self.discriminator.save(dir_name+'/discriminator.h5')
+		self.stackedGAN.save(dir_name+'/allTogether.h5')
+
+
+
 
 
 
