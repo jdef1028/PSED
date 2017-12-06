@@ -5,6 +5,7 @@ from keras.initializers import Zeros, RandomNormal, RandomUniform
 from keras.optimizers import Adam
 from keras.regularizers import l2
 from utils import *
+import numpy as np
 # input tensor dimensions
 Z_l = 2
 Z_m = 2
@@ -31,8 +32,12 @@ X_m = Z_m * (2**len(g_filter_depths))
 
 print("The dimension of the cropped image is: (" + str(X_l) + " x " + str(X_m) +")")
 
-#batch parameters
+#training parameters
 batch_size = 64
+epoch_num = 100
+ratio_btwn_D_G = 5 # train k steps for discriminator then 1 step for generator
+
+
 # regularization penalty parameter
 regularizers_weight = 0.02
 # optimization paramters
@@ -47,14 +52,29 @@ class SGAN(object):
 		# build generator
 		Z_dim = (Z_l, Z_m, Z_d)
 		self.generator = self._build_generator(Z_dim)
-
-		print("=== Generator configured ====")
+		self.generator.compile(loss='binary_crossentropy',
+							   optimizer=adam_opt,
+							   metric=['accuracy'])
 
 		# build discriminator
 		img_dim = (X_l, X_m, n_channel)
 		self.discriminator = self._build_discriminator(img_dim)
+		self.generator.compile(loss='binary_crossentropy',
+							   optimizer=adam_opt,
+							   metric=['accuracy'])
 
-		print("=== Discriminator configured === ")
+
+		z = Input(shape=Z_dim)
+		img = self.generator(z)
+		self.discriminator.trainable = False
+		validity = self.discriminator(img)
+
+		self.stackedGAN = Model(z, validity)
+		self.stackedGAN.compile(loss='binary_crossentropy')
+
+
+
+
 
 	def _build_generator(self, Z_vector_dim):
 		# generator builder
@@ -151,6 +171,38 @@ class SGAN(object):
 		prediction = discriminator(X)
 
 		return Model(X, prediction)
+
+
+	def train(self):
+		half_batch_size = int(batch_size / 2) # fake and real data will be of half_batch_size each
+		for epoch in epoch_num:
+
+			# update the discriminator
+			for discriminator_step in xrange(ratio_btwn_D_G):
+				#create minibatch
+				Z_batch = np.random.normal(0, 1, (half_batch_size, Z_l, Z_m, Z_d)) # this distribution is subject to change according to the assumption made
+				X_batch = sample_cropped_img(half_batch_size, X_l, X_m, n_channel)
+				fake_img_batch = self.generator.predict(Z_batch)
+
+				d_loss_fake = self.discriminator.train_on_batch(fake_img_batch, np.zeros((half_batch_size, 1)))
+				d_loss_real = self.discriminator.train_on_batch(X_batch, np.ones((half_batch_size, 1)))
+				d_loss = 0.5 * np.add(d_loss_fake, d_loss_real)
+
+			# update the generator
+
+			Z_batch = np.random.normal(0, 1, (batch_size, Z_l, Z_m, Z_d))
+
+			g_loss = self.stackedGAN.train_on_batch(Z_batch, np.ones(batch_size,1))
+
+			print("Epoch %d: [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss))
+
+
+
+
+
+
+
+
 
 
 
