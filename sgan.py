@@ -3,6 +3,7 @@ from keras.models import Sequential
 from keras.layers import Conv2D, Conv2DTranspose, BatchNormalization, LeakyReLU
 from keras.initializers import Zeros, RandomNormal, RandomUniform
 from keras.optimizers import Adam
+from keras.regularizers import l2
 # input tensor dimensions
 Z_l = 2
 Z_m = 2
@@ -31,7 +32,8 @@ print("The dimension of the cropped image is: (" + str(X_l) + " x " + str(X_m) +
 
 #batch parameters
 batch_size = 64
-
+# regularization penalty parameter
+regularizers_weight = 0.02
 # optimization paramters
 adam_opt = Adam(lr=0.0005, beta_1=0.5, epsilon=1e-7)
 
@@ -51,6 +53,7 @@ class SGAN(object):
 							 activation='relu',
 							 dilation_rate=(2, 2),
 							 kernel_initializer=RandomNormal(stddev=0.02),
+							 kernel_regularizer=l2(regularizers_weight),
 							 bias_initializer=Zeros(),
 							 input_shape=(Z_d, Z_l, Z_m)
 							 )
@@ -62,6 +65,7 @@ class SGAN(object):
 							 activation='relu',
 							 dilation_rate=(2, 2),
 							 kernel_initializer=RandomNormal(stddev=0.02),
+							 kernel_regularizer=l2(regularizers_weight),
 							 bias_initializer=Zeros(),
 							 )
 					 )
@@ -75,10 +79,13 @@ class SGAN(object):
 							 activation='tanh',
 							 dilation_rate=(2, 2),
 							 kernel_initializer=RandomNormal(stddev=0.02),
+							 kernel_regularizer=l2(regularizers_weight),
 							 bias_initializer=Zeros()
 							 )
 				 )
-		print("=== Generator built ====")
+		generator_output = self.generator.layers[-1].output
+
+		print("=== Generator configured ====")
 
 		# build discriminator
 		self.discriminator = Sequential()
@@ -89,6 +96,7 @@ class SGAN(object):
 							 padding="same",
 							 dilation_rate=(2, 2),
 							 kernel_initializer=RandomNormal(stddev=0.02),
+							 kernel_regularizer=l2(regularizers_weight),
 							 bias_initializer=Zeros(),
 							 input_shape=(n_channel, X_l, X_m)
 							 )
@@ -99,6 +107,7 @@ class SGAN(object):
 							 padding="same",
 							 dilation_rate=(2, 2),
 							 kernel_initializer=RandomNormal(stddev=0.02),
+							 kernel_regularizer=l2(regularizers_weight),
 							 bias_initializer=Zeros(),
 							 )
 					 )
@@ -112,11 +121,17 @@ class SGAN(object):
 							 activation='sigmoid',
 							 dilation_rate=(2, 2),
 							 kernel_initializer=RandomNormal(stddev=0.02),
+							 kernel_regularizer=l2(regularizers_weight),
 							 bias_initializer=Zeros()
 							 )
 				 )
+		discriminator_output = self.discriminator.layers[-1].output
 
-		print("=== Discriminator built === ")
+		print("=== Discriminator configured === ")
+
+
+		
+
 
 
 
