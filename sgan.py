@@ -9,6 +9,7 @@ import numpy as np
 import scipy.io as sio
 import os
 import datetime
+import cPickle as pickle
 # timestamp now
 now = datetime.datetime.now()
 
@@ -70,7 +71,7 @@ class SGAN(object):
 		# build discriminator
 		img_dim = (X_l, X_m, n_channel)
 		self.discriminator = self._build_discriminator(img_dim)
-		self.generator.compile(loss='binary_crossentropy',
+		self.discriminator.compile(loss='binary_crossentropy',
 							   optimizer=adam_opt,
 							   metric=['accuracy'])
 
@@ -188,7 +189,9 @@ class SGAN(object):
 
 	def train(self):
 		# image data loading and preparation
-
+		self.recorder = {'g_loss':[],
+						 'd_loss':[],
+						 'd_acc':[]}
 		img_collection=sio.loadmat(data_path)[data_var_name] #load img collections
 
 		half_batch_size = int(batch_size / 2) # fake and real data will be of half_batch_size each
@@ -224,7 +227,11 @@ class SGAN(object):
 
 			g_loss = self.stackedGAN.train_on_batch(Z_batch, np.ones(batch_size,1))
 
-			print("Minibatch Epoch %d: [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (minibatch_epoch, d_loss[0], 100*d_loss[1], g_loss))
+			print("Minibatch Epoch %d: [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (minibatch_epoch, d_loss[0], 100*d_loss[1], g_loss[0]))
+			self.recorder['d_loss'].append(d_loss[0])
+			self.recorder['d_acc'].append(100*d_loss[1])
+			self.recorder['g_loss'].append(g_loss)
+
 
 		dir_name = './model/'+str(now.year)+'-'+str(now.month)+'-'+str(now.day)+' '+str(now.hour)+':'+str(now.minute)
 		if not os.path.isdir(dir_name):
@@ -233,6 +240,8 @@ class SGAN(object):
 		self.discriminator.save(dir_name+'/discriminator.h5')
 		self.stackedGAN.save(dir_name+'/allTogether.h5')
 
+		with open(dir_name+'/training_history.pickle', 'wb') as f:
+			pickle.dump(self.recorder, f)
 
 
 
