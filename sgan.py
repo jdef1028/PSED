@@ -77,11 +77,13 @@ class SGAN(object):
 
 		z = Input(shape=Z_dim)
 		img = self.generator(z)
-		self.discriminator.trainable = False
+		#self.discriminator.trainable = False
 		validity = self.discriminator(img)
 
 		self.stackedGAN = Model(z, validity)
-		self.stackedGAN.compile(loss='binary_crossentropy')
+		self.stackedGAN.compile(loss='binary_crossentropy',
+								optimizer=adam_opt,
+								metric=['accuracy'])
 
 
 
@@ -161,7 +163,7 @@ class SGAN(object):
 							 bias_initializer=Zeros(),
 							 )
 					 )
-				discriminator.add(LeakyReLU(alpha=0.2))
+			discriminator.add(LeakyReLU(alpha=0.2))
 			discriminator.add(BatchNormalization(beta_initializer='zeros',
 										 gamma_initializer=RandomNormal(mean=1., stddev=0.02)))
 
@@ -190,8 +192,9 @@ class SGAN(object):
 		img_collection=sio.loadmat(data_path)[data_var_name] #load img collections
 
 		half_batch_size = int(batch_size / 2) # fake and real data will be of half_batch_size each
-		for epoch in epoch_num:
+		for minibatch_epoch in epoch_num:
 
+			self.discriminator.trainable = True
 			# update the discriminator
 			for discriminator_step in xrange(ratio_btwn_D_G):
 				#create minibatch
@@ -199,17 +202,29 @@ class SGAN(object):
 				X_batch = sample_cropped_img(img_collection, half_batch_size, X_l, X_m, n_channel)
 				fake_img_batch = self.generator.predict(Z_batch)
 
-				d_loss_fake = self.discriminator.train_on_batch(fake_img_batch, np.zeros((half_batch_size, 1)))
-				d_loss_real = self.discriminator.train_on_batch(X_batch, np.ones((half_batch_size, 1)))
-				d_loss = 0.5 * np.add(d_loss_fake, d_loss_real)
+				# mix them together and shuffle
+				minibatch_X = np.concatenate((fake_img_batch, X_batch), axis=0)
+				minibatch_Y = np.concatenate((np.zeros((half_batch_size,1)), np.ones((half_batch_size,1))), axis=0)
+
+				sequence = np.random.permutation(batch_size)
+
+				minibatch_X = minibatch_X[sequence, :, :, :]
+				minibatch_Y = minibatch_Y[sequence, :, :, :]
+
+				#d_loss_fake = self.discriminator.train_on_batch(fake_img_batch, np.zeros((half_batch_size, 1)))
+				#d_loss_real = self.discriminator.train_on_batch(X_batch, np.ones((half_batch_size, 1)))
+				#d_loss = 0.5 * np.add(d_loss_fake, d_loss_real)
+
+				d_loss = self.discriminator.train_on_batch(minibatch_X, minibatch_Y)
 
 			# update the generator
+			self.discriminator.trainable = False
 
 			Z_batch = np.random.normal(0, 1, (batch_size, Z_l, Z_m, Z_d))
 
 			g_loss = self.stackedGAN.train_on_batch(Z_batch, np.ones(batch_size,1))
 
-			print("Epoch %d: [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss))
+			print("Minibatch Epoch %d: [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (minibatch_epoch, d_loss[0], 100*d_loss[1], g_loss))
 
 		dir_name = './model/'+str(now.year)+'-'+str(now.month)+'-'+str(now.day)+' '+str(now.hour)+':'+str(now.minute)
 		if not os.path.isdir(dir_name):
