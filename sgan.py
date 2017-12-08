@@ -11,6 +11,8 @@ import os
 import datetime
 import cPickle as pickle
 import h5py
+import matplotlib
+matplotlib.use('agg')
 # timestamp now
 now = datetime.datetime.now()
 
