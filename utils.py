@@ -46,7 +46,7 @@ def generate_image_snapshots(img_batch, num_img2plot, img_path):
 	fig, axs = plt.subplots(1, num_img2plot, edgecolor='r')
 	axs = axs.ravel()
 	for i in xrange(num_img2plot):
-		axs[i].imshow(fake_img, cmap='Greys', interpolation='nearest')
+		axs[i].imshow(img_to_plot[i], cmap='Greys', interpolation='nearest')
 		axs[i].axis('off')
 	plt.savefig(img_path+'.png')
 
