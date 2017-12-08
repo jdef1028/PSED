@@ -10,6 +10,7 @@ import scipy.io as sio
 import os
 import datetime
 import cPickle as pickle
+import h5py
 # timestamp now
 now = datetime.datetime.now()
 
@@ -20,7 +21,7 @@ Z_d = 100
 
 # image data specification
 data_path = './data/data.mat' #needs to be a .mat file
-data_var_name = 'image'
+data_var_name = 'IMG'
 
 # image channel num
 
@@ -192,10 +193,12 @@ class SGAN(object):
 		self.recorder = {'g_loss':[],
 						 'd_loss':[],
 						 'd_acc':[]}
-		img_collection=sio.loadmat(data_path)[data_var_name] #load img collections
+		# img_collection=sio.loadmat(data_path)[data_var_name] #load img collections
+		img_collection_data = h5py.File(data_path, 'r')
+		img_collection = np.transpose(img_collection_data[data_var_name])
 
 		half_batch_size = int(batch_size / 2) # fake and real data will be of half_batch_size each
-		for minibatch_epoch in epoch_num:
+		for minibatch_epoch in xrange(epoch_num):
 
 			self.discriminator.trainable = True
 			# update the discriminator
