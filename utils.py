@@ -65,8 +65,7 @@ if __name__ == '__main__':
 	img_collections = np.array(img_collections)
 	img_collections = img_collections.T
 	print(img_collections.shape)
-	img_batch = sample_cropped_img(img_collections, 32, 50, 50, 3)
+	img_batch = sample_cropped_img(img_collections, 32, 128, 128, 3)
 	print(img_batch.shape)
 	temp = img_batch[1, :, :, :]
-	plt.imshow(temp)
-	plt.show()
+	generate_image_snapshots(img_batch, 10, './a')
