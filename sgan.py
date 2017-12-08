@@ -49,6 +49,7 @@ batch_size = 64
 epoch_num = 1e5
 D_steps = 1 # in each epoch, train discriminator for D_steps times
 G_steps = 2 # in each epoch, train generator for G_steps times
+mix_minibatch = True
 
 # regularization penalty parameter
 regularizers_weight = 0.02
@@ -213,20 +214,23 @@ class SGAN(object):
 				fake_img_batch = self.generator.predict(Z_batch)
 
 				# mix them together and shuffle
-				minibatch_X = np.concatenate((fake_img_batch, X_batch), axis=0)
-				minibatch_Y = np.concatenate((np.zeros((half_batch_size,1)), np.ones((half_batch_size,1))), axis=0)
+				if mix_minibatch:
+					minibatch_X = np.concatenate((fake_img_batch, X_batch), axis=0)
+					minibatch_Y = np.concatenate((np.zeros((half_batch_size,1)), np.ones((half_batch_size,1))), axis=0)
 
-				sequence = np.random.permutation(batch_size)
+					sequence = np.random.permutation(batch_size)
 
-				minibatch_X = minibatch_X[sequence]
-				minibatch_Y = minibatch_Y[sequence]
+					minibatch_X = minibatch_X[sequence]
+					minibatch_Y = minibatch_Y[sequence]
+					d_loss = self.discriminator.train_on_batch(minibatch_X, minibatch_Y)
+				else:
+					# doesn't apply mixing of minibatch, train separately
 
+					d_loss_fake = self.discriminator.train_on_batch(fake_img_batch, np.zeros((half_batch_size, 1)))
+					d_loss_real = self.discriminator.train_on_batch(X_batch, np.ones((half_batch_size, 1)))
+					d_loss = 0.5 * np.add(d_loss_fake, d_loss_real)
 
-				#d_loss_fake = self.discriminator.train_on_batch(fake_img_batch, np.zeros((half_batch_size, 1)))
-				#d_loss_real = self.discriminator.train_on_batch(X_batch, np.ones((half_batch_size, 1)))
-				#d_loss = 0.5 * np.add(d_loss_fake, d_loss_real)
-
-				d_loss = self.discriminator.train_on_batch(minibatch_X, minibatch_Y)
+				
 
 			# update the generator
 			self.discriminator.trainable = False
