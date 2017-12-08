@@ -5,6 +5,8 @@ import h5py
 import random
 import numpy as np
 from math import sqrt
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 def sample_cropped_img(img_collections, batch_size, l, m, n_channel, seed=999):
 	#randomly sample one image from image_collections
