@@ -46,10 +46,12 @@ print("The dimension of the cropped image is: (" + str(X_l) + " x " + str(X_m) +
 
 #training parameters
 batch_size = 64
+
 epoch_num = int(1e5)
 D_steps = 1 # in each epoch, train discriminator for D_steps times
 G_steps = 5 # in each epoch, train generator for G_steps times
 mix_minibatch = False
+
 
 # regularization penalty parameter
 regularizers_weight = 0.02
