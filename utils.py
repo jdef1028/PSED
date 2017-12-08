@@ -36,6 +36,24 @@ def sample_cropped_img(img_collections, batch_size, l, m, n_channel, seed=999):
 
 	return img_batch
 
+def generate_image_snapshots(img_batch, num_img2plot, img_path):
+	batch_size = img_batch.shape[0]
+	img_to_pick = np.random.permutation(batch_size)[:num_img2plot]
+	img_to_plot = img_batch[img_to_pick]
+	img_to_plot = img_to_plot[:, :, 1]
+	plt.subplot(1, num_img2plot, edgecolor='r')
+	axs = axs.ravel()
+	for i in xrange(num_img2plot):
+		axs[i].imshow(fake_img, cmap='Greys', interpolation='nearest')
+		axs[i].axis('off')
+	plt.savefig(img_path+'.png')
+
+
+
+
+
+
+
 if __name__ == '__main__':
 
 	with h5py.File('./data/data.mat', 'r') as f:

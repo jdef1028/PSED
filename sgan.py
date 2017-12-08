@@ -25,7 +25,7 @@ data_var_name = 'IMG'
 
 # image channel num
 
-n_channel = 3
+n_channel = 1
 
 # generator dimensions
 g_filter_sizes = [(5, 5)] * 5 + [(5, 5)]
@@ -46,15 +46,18 @@ print("The dimension of the cropped image is: (" + str(X_l) + " x " + str(X_m) +
 
 #training parameters
 batch_size = 64
-epoch_num = 1e5
+epoch_num = int(1e5)
 D_steps = 1 # in each epoch, train discriminator for D_steps times
-G_steps = 2 # in each epoch, train generator for G_steps times
-mix_minibatch = True
+G_steps = 5 # in each epoch, train generator for G_steps times
+mix_minibatch = False
 
 # regularization penalty parameter
 regularizers_weight = 0.02
 # optimization paramters
 adam_opt = Adam(lr=0.0005, beta_1=0.5, epsilon=1e-7)
+
+#history recording parameter
+snapshot_interval = 2000
 
 class SGAN(object):
 	def __init__(self):
@@ -194,7 +197,8 @@ class SGAN(object):
 		# image data loading and preparation
 		self.recorder = {'g_loss':[],
 						 'd_loss':[],
-						 'd_acc':[]}
+						 'd_acc':[],
+						 'g_acc':[]}
 		# img_collection=sio.loadmat(data_path)[data_var_name] #load img collections
 		print('===> Loading data...')
 		img_collection_data = h5py.File(data_path, 'r')
@@ -202,6 +206,13 @@ class SGAN(object):
 		print('===> Data loaded!')
 
 		half_batch_size = int(batch_size / 2) # fake and real data will be of half_batch_size each
+
+		#create directory to store history
+		dir_name = './model/'+str(now.year)+'-'+str(now.month)+'-'+str(now.day)+' '+str(now.hour)+':'+str(now.minute)
+		if not os.path.isdir(dir_name):
+			os.mkdir(dir_name)
+
+		#training starts here
 		for minibatch_epoch in xrange(epoch_num):
 			if minibatch_epoch % 1 == 0:
 				print('===> Mini_epoch:', minibatch_epoch)
@@ -239,15 +250,18 @@ class SGAN(object):
 
 				g_loss = self.stackedGAN.train_on_batch(Z_batch, np.ones((batch_size,1)))
 
+				if minibatch_epoch % snapshot_interval in [0,1,2]:
+					fake_img_batch = self.generator.predict(Z_batch)
+					generate_img_snapshots(fake_img_batch, 10, dir_name+'/snap_'+minibatch_epoch)
+
 			print("Minibatch Epoch %d: [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (minibatch_epoch, d_loss[0], 100*d_loss[1], g_loss[0]))
 			self.recorder['d_loss'].append(d_loss[0])
 			self.recorder['d_acc'].append(100*d_loss[1])
-			self.recorder['g_loss'].append(g_loss)
+			self.recorder['g_loss'].append(g_loss[0])
+			self.recorder['g_acc'].append(100*g_loss[1])
 
 
-		dir_name = './model/'+str(now.year)+'-'+str(now.month)+'-'+str(now.day)+' '+str(now.hour)+':'+str(now.minute)
-		if not os.path.isdir(dir_name):
-			os.mkdir(dir_name)
+
 		self.generator.save(dir_name+'/generator.h5')
 		self.discriminator.save(dir_name+'/discriminator.h5')
 		self.stackedGAN.save(dir_name+'/allTogether.h5')
