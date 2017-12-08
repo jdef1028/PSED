@@ -67,14 +67,14 @@ class SGAN(object):
 		self.generator = self._build_generator(Z_dim)
 		self.generator.compile(loss='binary_crossentropy',
 							   optimizer=adam_opt,
-							   metric=['accuracy'])
+							   metrics=['accuracy'])
 
 		# build discriminator
 		img_dim = (X_l, X_m, n_channel)
 		self.discriminator = self._build_discriminator(img_dim)
 		self.discriminator.compile(loss='binary_crossentropy',
 							   optimizer=adam_opt,
-							   metric=['accuracy'])
+							   metrics=['accuracy'])
 
 
 		z = Input(shape=Z_dim)
@@ -85,7 +85,7 @@ class SGAN(object):
 		self.stackedGAN = Model(z, validity)
 		self.stackedGAN.compile(loss='binary_crossentropy',
 								optimizer=adam_opt,
-								metric=['accuracy'])
+								metrics=['accuracy'])
 
 
 
@@ -194,8 +194,10 @@ class SGAN(object):
 						 'd_loss':[],
 						 'd_acc':[]}
 		# img_collection=sio.loadmat(data_path)[data_var_name] #load img collections
+		print('===> Loading data...')
 		img_collection_data = h5py.File(data_path, 'r')
 		img_collection = np.transpose(img_collection_data[data_var_name])
+		print('===> Data loaded!')
 
 		half_batch_size = int(batch_size / 2) # fake and real data will be of half_batch_size each
 		for minibatch_epoch in xrange(epoch_num):
@@ -214,8 +216,9 @@ class SGAN(object):
 
 				sequence = np.random.permutation(batch_size)
 
-				minibatch_X = minibatch_X[sequence, :, :, :]
-				minibatch_Y = minibatch_Y[sequence, :, :, :]
+				minibatch_X = minibatch_X[sequence]
+				minibatch_Y = minibatch_Y[sequence]
+
 
 				#d_loss_fake = self.discriminator.train_on_batch(fake_img_batch, np.zeros((half_batch_size, 1)))
 				#d_loss_real = self.discriminator.train_on_batch(X_batch, np.ones((half_batch_size, 1)))
