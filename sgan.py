@@ -252,7 +252,7 @@ class SGAN(object):
 
 				if minibatch_epoch % snapshot_interval in [0,1,2]:
 					fake_img_batch = self.generator.predict(Z_batch)
-					generate_image_snapshots(fake_img_batch, 10, dir_name+'/snap_'+minibatch_epoch)
+					generate_image_snapshots(fake_img_batch, 10, dir_name+'/snap_'+str(minibatch_epoch))
 
 			print("Minibatch Epoch %d: [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (minibatch_epoch, d_loss[0], 100*d_loss[1], g_loss[0]))
 			self.recorder['d_loss'].append(d_loss[0])
