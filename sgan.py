@@ -46,9 +46,9 @@ print("The dimension of the cropped image is: (" + str(X_l) + " x " + str(X_m) +
 
 #training parameters
 batch_size = 64
-epoch_num = 100
-ratio_btwn_D_G = 5 # train k steps for discriminator then 1 step for generator
-
+epoch_num = 1e5
+D_steps = 1 # in each epoch, train discriminator for D_steps times
+G_steps = 2 # in each epoch, train generator for G_steps times
 
 # regularization penalty parameter
 regularizers_weight = 0.02
@@ -202,11 +202,11 @@ class SGAN(object):
 
 		half_batch_size = int(batch_size / 2) # fake and real data will be of half_batch_size each
 		for minibatch_epoch in xrange(epoch_num):
-			if minibatch_epoch % 10 == 0:
+			if minibatch_epoch % 1 == 0:
 				print('===> Mini_epoch:', minibatch_epoch)
 			self.discriminator.trainable = True
 			# update the discriminator
-			for discriminator_step in xrange(ratio_btwn_D_G):
+			for discriminator_step in xrange(D_steps):
 				#create minibatch
 				Z_batch = np.random.normal(0, 1, (half_batch_size, Z_l, Z_m, Z_d)) # this distribution is subject to change according to the assumption made
 				X_batch = sample_cropped_img(img_collection, half_batch_size, X_l, X_m, n_channel)
@@ -230,10 +230,10 @@ class SGAN(object):
 
 			# update the generator
 			self.discriminator.trainable = False
+			for generator_step in xrange(G_steps):
+				Z_batch = np.random.normal(0, 1, (batch_size, Z_l, Z_m, Z_d))
 
-			Z_batch = np.random.normal(0, 1, (batch_size, Z_l, Z_m, Z_d))
-
-			g_loss = self.stackedGAN.train_on_batch(Z_batch, np.ones((batch_size,1)))
+				g_loss = self.stackedGAN.train_on_batch(Z_batch, np.ones((batch_size,1)))
 
 			print("Minibatch Epoch %d: [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (minibatch_epoch, d_loss[0], 100*d_loss[1], g_loss[0]))
 			self.recorder['d_loss'].append(d_loss[0])
