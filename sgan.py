@@ -218,8 +218,8 @@ class SGAN(object):
 
 		#training starts here
 		for minibatch_epoch in xrange(epoch_num):
-			if minibatch_epoch % 1 == 0:
-				print('===> Mini_epoch:', minibatch_epoch)
+			#if minibatch_epoch % 1 == 0:
+				#print('===> Mini_epoch:', minibatch_epoch)
 			self.discriminator.trainable = True
 			# update the discriminator
 			for discriminator_step in xrange(D_steps):

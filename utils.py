@@ -42,7 +42,7 @@ def generate_image_snapshots(img_batch, num_img2plot, img_path):
 	batch_size = img_batch.shape[0]
 	img_to_pick = np.random.permutation(batch_size)[:num_img2plot]
 	img_to_plot = img_batch[img_to_pick]
-	img_to_plot = img_to_plot[:, :, 1]
+	img_to_plot = np.squeeze(img_to_plot, axis=3)
 	fig, axs = plt.subplots(1, num_img2plot, edgecolor='r')
 	axs = axs.ravel()
 	for i in xrange(num_img2plot):
