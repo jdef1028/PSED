@@ -197,7 +197,7 @@ class SGAN(object):
 		img_collection = h5py.File(data_path, 'r')[data_var_name]
 
 		half_batch_size = int(batch_size / 2) # fake and real data will be of half_batch_size each
-		for minibatch_epoch in epoch_num:
+		for minibatch_epoch in xrange(epoch_num):
 
 			self.discriminator.trainable = True
 			# update the discriminator
