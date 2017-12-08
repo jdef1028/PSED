@@ -194,7 +194,8 @@ class SGAN(object):
 						 'd_loss':[],
 						 'd_acc':[]}
 		# img_collection=sio.loadmat(data_path)[data_var_name] #load img collections
-		img_collection = h5py.File(data_path, 'r')[data_var_name]
+		img_collection_data = h5py.File(data_path, 'r')
+		img_collection = np.transpose(img_collection_data[data_var_name])
 
 		half_batch_size = int(batch_size / 2) # fake and real data will be of half_batch_size each
 		for minibatch_epoch in xrange(epoch_num):
