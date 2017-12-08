@@ -1,6 +1,6 @@
 from __future__ import print_function
 from keras.models import Sequential, Model
-from keras.layers import Conv2D, Conv2DTranspose, BatchNormalization, LeakyReLU, Input
+from keras.layers import Conv2D, Conv2DTranspose, BatchNormalization, LeakyReLU, Input, GlobalAveragePooling2D
 from keras.initializers import Zeros, RandomNormal, RandomUniform
 from keras.optimizers import Adam
 from keras.regularizers import l2
@@ -180,6 +180,7 @@ class SGAN(object):
 							 bias_initializer=Zeros()
 							 )
 				 )
+		discriminator.add(GlobalAveragePooling2D())
 		discriminator.summary()
 
 		X = Input(shape=img_dim)
@@ -201,7 +202,8 @@ class SGAN(object):
 
 		half_batch_size = int(batch_size / 2) # fake and real data will be of half_batch_size each
 		for minibatch_epoch in xrange(epoch_num):
-
+			if minibatch_epoch % 1 == 0:
+				print('===> Mini_epoch:', minibatch_epoch)
 			self.discriminator.trainable = True
 			# update the discriminator
 			for discriminator_step in xrange(ratio_btwn_D_G):
@@ -231,7 +233,7 @@ class SGAN(object):
 
 			Z_batch = np.random.normal(0, 1, (batch_size, Z_l, Z_m, Z_d))
 
-			g_loss = self.stackedGAN.train_on_batch(Z_batch, np.ones(batch_size,1))
+			g_loss = self.stackedGAN.train_on_batch(Z_batch, np.ones((batch_size,1)))
 
 			print("Minibatch Epoch %d: [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (minibatch_epoch, d_loss[0], 100*d_loss[1], g_loss[0]))
 			self.recorder['d_loss'].append(d_loss[0])
