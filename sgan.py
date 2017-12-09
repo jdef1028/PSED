@@ -49,14 +49,14 @@ print("The dimension of the cropped image is: (" + str(X_l) + " x " + str(X_m) +
 #training parameters
 batch_size = 64
 
-epoch_num = int(1e5)
-D_steps = 1 # in each epoch, train discriminator for D_steps times
-G_steps = 5 # in each epoch, train generator for G_steps times
+epoch_num = int(2e5)
+D_steps = 3 # in each epoch, train discriminator for D_steps times
+G_steps = 1 # in each epoch, train generator for G_steps times
 mix_minibatch = False
 
 
 # regularization penalty parameter
-regularizers_weight = 0.02
+regularizers_weight = 0.001
 # optimization paramters
 adam_opt = Adam(lr=0.0005, beta_1=0.5, epsilon=1e-7)
 
@@ -254,11 +254,11 @@ class SGAN(object):
 
 				g_loss = self.stackedGAN.train_on_batch(Z_batch, np.ones((batch_size,1)))
 
-				if minibatch_epoch % snapshot_interval in [0,1,2]:
+				if minibatch_epoch % snapshot_interval in [0, snapshot_interval-1, snapshot_interval-2]:
 					fake_img_batch = self.generator.predict(Z_batch)
 					generate_image_snapshots(fake_img_batch, 10, dir_name+'/snap_'+str(minibatch_epoch))
 
-			print("Minibatch Epoch %d: [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (minibatch_epoch, d_loss[0], 100*d_loss[1], g_loss[0]))
+			print("Minibatch Epoch %d: [D loss: %f, acc.: %.2f%%] [G loss: %f, acc.: %.2f%%]" % (minibatch_epoch, d_loss[0], 100*d_loss[1], g_loss[0], 100*g_loss[1]))
 			self.recorder['d_loss'].append(d_loss[0])
 			self.recorder['d_acc'].append(100*d_loss[1])
 			self.recorder['g_loss'].append(g_loss[0])

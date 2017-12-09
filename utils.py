@@ -8,6 +8,7 @@ from math import sqrt
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
+from scipy import misc
 def sample_cropped_img(img_collections, batch_size, l, m, n_channel, seed=999):
 	#randomly sample one image from image_collections
 	#then crop a lxm sub-image from this sampled image
@@ -43,14 +44,10 @@ def generate_image_snapshots(img_batch, num_img2plot, img_path):
 	img_to_pick = np.random.permutation(batch_size)[:num_img2plot]
 	img_to_plot = img_batch[img_to_pick]
 	img_to_plot = np.squeeze(img_to_plot, axis=3)
-	fig, axs = plt.subplots(1, num_img2plot, edgecolor='r')
-	axs = axs.ravel()
+	
 	for i in xrange(num_img2plot):
 		subimg = img_to_plot[i]
-		axs[i].imshow(subimg, cmap='Greys', interpolation='nearest')
-		axs[i].axis('off')
-	plt.savefig(img_path+'.png')
-	plt.close()
+		misc.imsave(imgpath+'-'+str(i))
 
 
 
@@ -65,7 +62,7 @@ if __name__ == '__main__':
 	img_collections = np.array(img_collections)
 	img_collections = img_collections.T
 	print(img_collections.shape)
-	img_batch = sample_cropped_img(img_collections, 32, 128, 128, 3)
+	img_batch = sample_cropped_img(img_collections, 32, 128, 128, 1)
 	print(img_batch.shape)
 	temp = img_batch[1, :, :, :]
 	generate_image_snapshots(img_batch, 10, './a')
