@@ -61,7 +61,7 @@ regularizers_weight = 0.001
 adam_opt = Adam(lr=0.0005, beta_1=0.5, epsilon=1e-7)
 
 #history recording parameter
-snapshot_interval = 2000
+snapshot_interval = 500
 
 class SGAN(object):
 	def __init__(self):
@@ -256,7 +256,7 @@ class SGAN(object):
 
 				if minibatch_epoch % snapshot_interval in [0, snapshot_interval-1, snapshot_interval-2]:
 					fake_img_batch = self.generator.predict(Z_batch)
-					generate_image_snapshots(fake_img_batch, 10, dir_name+'/snap_'+str(minibatch_epoch))
+					generate_image_snapshots(fake_img_batch, 3, dir_name+'/snap_'+str(minibatch_epoch))
 
 			print("Minibatch Epoch %d: [D loss: %f, acc.: %.2f%%] [G loss: %f, acc.: %.2f%%]" % (minibatch_epoch, d_loss[0], 100*d_loss[1], g_loss[0], 100*g_loss[1]))
 			self.recorder['d_loss'].append(d_loss[0])
