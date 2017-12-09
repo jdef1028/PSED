@@ -22,7 +22,7 @@ Z_m = 2
 Z_d = 100
 
 # image data specification
-data_path = './data/data.mat' #needs to be a .mat file
+data_path = './data/data_05.mat' #needs to be a .mat file
 data_var_name = 'IMG'
 
 # image channel num
