@@ -47,7 +47,7 @@ def generate_image_snapshots(img_batch, num_img2plot, img_path):
 	
 	for i in xrange(num_img2plot):
 		subimg = img_to_plot[i]
-		misc.imsave(imgpath+'-'+str(i))
+		misc.imsave(img_path+'-'+str(i)+'.png', subimg)
 
 
 
