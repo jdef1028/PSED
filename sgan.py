@@ -1,6 +1,6 @@
 from __future__ import print_function
 from keras.models import Sequential, Model
-from keras.layers import Conv2D, Conv2DTranspose, BatchNormalization, LeakyReLU, Input, GlobalAveragePooling2D
+from keras.layers import Conv2D, Conv2DTranspose, BatchNormalization, LeakyReLU, Input, GlobalAveragePooling2D, relu
 from keras.initializers import Zeros, RandomNormal, RandomUniform
 from keras.optimizers import Adam
 from keras.regularizers import l2
@@ -17,9 +17,9 @@ matplotlib.use('agg')
 now = datetime.datetime.now()
 
 # input tensor dimensions
-Z_l = 2
-Z_m = 2
-Z_d = 100
+Z_l = 4
+Z_m = 4
+Z_d = 64
 
 # image data specification
 data_path = './data/data_05.mat' #needs to be a .mat file
@@ -30,12 +30,12 @@ data_var_name = 'IMG'
 n_channel = 1
 
 # generator dimensions
-g_filter_sizes = [(5, 5)] * 5 + [(5, 5)]
-g_filter_depths = [1024, 512, 256, 128, 64] + [n_channel]
+g_filter_sizes = [(5, 5)] * 4 + [(5, 5)]
+g_filter_depths = [512, 256, 128, 64] + [n_channel]
 
 # discrimitor dimensions
-d_filter_sizes = [(5, 5)] * 5 + [(5, 5)]
-d_filter_depths = [64, 128, 256, 512, 1024] + [1]
+d_filter_sizes = [(5, 5)] * 4 + [(5, 5)]
+d_filter_depths = [64, 128, 256, 512] + [1]
 
 assert len(g_filter_depths) == len(g_filter_sizes)
 assert len(d_filter_depths) == len(d_filter_sizes)
@@ -49,7 +49,7 @@ print("The dimension of the cropped image is: (" + str(X_l) + " x " + str(X_m) +
 #training parameters
 batch_size = 64
 
-epoch_num = int(2e5)
+epoch_num = int(1e4)
 D_steps = 3 # in each epoch, train discriminator for D_steps times
 G_steps = 1 # in each epoch, train generator for G_steps times
 mix_minibatch = False
@@ -61,7 +61,7 @@ regularizers_weight = 0.001
 adam_opt = Adam(lr=0.0005, beta_1=0.5, epsilon=1e-7)
 
 #history recording parameter
-snapshot_interval = 500
+snapshot_interval = 1000
 
 class SGAN(object):
 	def __init__(self):
@@ -107,7 +107,6 @@ class SGAN(object):
 				generator.add(Conv2DTranspose(filters=g_filter_depths[lv],
 							 kernel_size=g_filter_sizes[lv],
 							 padding="same",
-							 activation='relu',
 							 strides=(2, 2),
 							 kernel_initializer=RandomNormal(stddev=0.02),
 							 kernel_regularizer=l2(regularizers_weight),
@@ -119,7 +118,6 @@ class SGAN(object):
 				generator.add(Conv2DTranspose(filters=g_filter_depths[lv],
 							 kernel_size=g_filter_sizes[lv],
 							 padding="same",
-							 activation='relu',
 							 strides=(2, 2),
 							 kernel_initializer=RandomNormal(stddev=0.02),
 							 kernel_regularizer=l2(regularizers_weight),
@@ -128,7 +126,7 @@ class SGAN(object):
 					 )
 			generator.add(BatchNormalization(beta_initializer='zeros',
 										 gamma_initializer=RandomNormal(mean=1., stddev=0.02)))
-
+			generator.add(relu())
 		# add the last layer of the generator
 		generator.add(Conv2DTranspose(filters=g_filter_depths[lv+1],
 							 kernel_size=g_filter_sizes[lv+1],
@@ -173,9 +171,10 @@ class SGAN(object):
 							 bias_initializer=Zeros(),
 							 )
 					 )
-			discriminator.add(LeakyReLU(alpha=0.2))
 			discriminator.add(BatchNormalization(beta_initializer='zeros',
-										 gamma_initializer=RandomNormal(mean=1., stddev=0.02)))
+							  gamma_initializer=RandomNormal(mean=1., stddev=0.02)))
+			discriminator.add(LeakyReLU(alpha=0.2))
+
 
 		#add the last layer to discriminator
 		discriminator.add(Conv2D(filters=d_filter_depths[lv+1],
@@ -253,10 +252,16 @@ class SGAN(object):
 				Z_batch = np.random.normal(0, 1, (batch_size, Z_l, Z_m, Z_d))
 
 				g_loss = self.stackedGAN.train_on_batch(Z_batch, np.ones((batch_size,1)))
+				#extra training steps
+				if g_loss[0]/d_loss[0]> 10:
+					Z_batch = np.random.normal(0, 1, (batch_size, Z_l, Z_m, Z_d))
+					g_loss = self.stackedGAN.train_on_batch(Z_batch, np.ones((batch_size,1))) 
 
 				if minibatch_epoch % snapshot_interval in [0, snapshot_interval-1, snapshot_interval-2]:
 					fake_img_batch = self.generator.predict(Z_batch)
 					generate_image_snapshots(fake_img_batch, 3, dir_name+'/snap_'+str(minibatch_epoch))
+
+
 
 			print("Minibatch Epoch %d: [D loss: %f, acc.: %.2f%%] [G loss: %f, acc.: %.2f%%]" % (minibatch_epoch, d_loss[0], 100*d_loss[1], g_loss[0], 100*g_loss[1]))
 			self.recorder['d_loss'].append(d_loss[0])
