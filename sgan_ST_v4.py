@@ -8,7 +8,7 @@ import h5py
 import random
 from keras import backend
 import math
-
+import cPickle as pickle
 def two_p_corr(img):
     img = np.array(img > 0, dtype=int)
     d1, d2 = img.shape
@@ -120,6 +120,9 @@ def show_result(num_epoch, show = False, save = False, path = 'result.png'):
     if save:
         plt.savefig(path)
         plt.clf()
+        with open(path[:-3]+'pickle', 'wb') as f:
+            pickle.dump(two_p_corr_list, f)
+
 
     if show:
         plt.show()
