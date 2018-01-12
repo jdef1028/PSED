@@ -9,6 +9,30 @@ import random
 from keras import backend
 import math
 
+def two_p_corr(img):
+    img = np.array(img > 0, dtype=int)
+    d1, d2 = img.shape
+    R = min(round(d1/2), round(d2/2))
+
+    count = np.zeros((int(R+1), 1))
+    Bn = np.zeros((int(R+1), 1))
+
+    F = np.fft.fft2(img)
+    c = np.fft.fftshift(np.fft.ifft2(F * np.conj(F)))/d1**2
+    c = c.astype(float)
+
+    y = np.amax(c)
+    ic, jc = np.unravel_index(c.argmax(), c.shape)
+
+    for i in xrange(d1):
+        for j in xrange(d2):
+            r = int(math.ceil(math.sqrt((i-ic)**2+(j-jc)**2)))
+            if r<=round(R):
+                Bn[r] = Bn[r] + c[i,j]
+                count[r+1] = count[r+1] + 1
+    Bn = Bn / count
+    return Bn
+
 def lrelu(x, th=0.2):
     return tf.maximum(th * x, x)
 def relu(x):
@@ -80,11 +104,15 @@ def show_result(num_epoch, show = False, save = False, path = 'result.png'):
         ax[i, j].get_xaxis().set_visible(False)
         ax[i, j].get_yaxis().set_visible(False)
 
+    two_p_corr_list = []
     for k in range(size_figure_grid*size_figure_grid):
         i = k // size_figure_grid
         j = k % size_figure_grid
         ax[i, j].cla()
-        ax[i, j].imshow(np.reshape(test_images[k], (128, 128)), cmap='gray')
+        temp_img = np.reshape(test_images[k], (128, 128))
+        binary_img = np.array(temp_img > 0.5, dtype=int) ###
+        two_p_corr_list.append(two_p_corr(binary_img)) ####
+        ax[i, j].imshow(temp_img, cmap='gray')
 
     label = 'Epoch {0}'.format(num_epoch)
     fig.text(0.5, 0.04, label, ha='center')
