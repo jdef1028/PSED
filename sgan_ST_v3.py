@@ -367,6 +367,20 @@ train_hist['total_ptime'] = []
 np.random.seed(int(time.time()))
 print('training start!')
 start_time = time.time()
+
+D_starting_idx = 0
+G_starting_idx = 0
+D_num_samples = train_epoch * D_steps * batch_size
+G_num_samples = train_epoch * G_steps * batch_size
+
+D_idx_permutation = np.random.permutation(D_num_samples)
+G_idx_permutation = np.random.permutation(G_num_samples)
+
+D_idx_list = np.mod(D_idx_permutation, train_set_orig.shape[0])
+del D_idx_permutation, D_num_samples
+G_idx_list = np.mod(G_idx_permutation, train_set_orig.shape[0])
+del G_idx_permutation, G_num_samples
+
 for epoch in range(train_epoch):
     G_losses = []
     D_losses = []
@@ -374,8 +388,8 @@ for epoch in range(train_epoch):
     for D_i in xrange(D_steps):
         #trainID = random.sample(range(train_set_orig.shape[0]), batch_size)
         #x_ = train_set_orig[trainID,:,:,:]
-        random_image= tf.train.slice_input_producer([train_set_orig], shuffle=True)
-        x_ = tf.train.batch([random_image], batch_size=batch_size).eval()
+        x_ = train_set_orig[D_starting_idx:D_starting_idx+batch_size]
+        D_starting_idx += batch_size
         z_ = np.random.normal(0, 1, (batch_size,)+feature_vector_dim)
 
         loss_d_, _ = sess.run([D_loss, D_optim], {x: x_, z: z_, isTrain: True})
@@ -384,10 +398,12 @@ for epoch in range(train_epoch):
         # update generator
         #trainID = random.sample(range(train_set_orig.shape[0]), batch_size)
         #x_ = train_set_orig[trainID,:,:,:]
-        random_image= tf.train.slice_input_producer([train_set_orig], shuffle=True)
-        x_ = tf.train.batch([random_image], batch_size=batch_size).eval()
+        
+        x_ = train_set_orig[G_starting_idx:G_starting_idx+batch_size]
+        G_starting_idx += batch_size
+
         z_ = np.random.normal(0, 1, (batch_size,)+feature_vector_dim)
-        style_image_input = style_array[trainID, :, :, :]
+        style_image_input = style_array[G_starting_idx:G_starting_idx+batch_size, :, :, :]
         loss_g_, _ = sess.run([G_loss, G_optim], {z: z_, x: x_, style_image:style_image_input, isTrain: True})
         G_losses.append(loss_g_)
 
