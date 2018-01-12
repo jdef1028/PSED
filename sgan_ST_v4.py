@@ -29,7 +29,7 @@ def two_p_corr(img):
             r = int(math.ceil(math.sqrt((i-ic)**2+(j-jc)**2)))
             if r<=round(R):
                 Bn[r] = Bn[r] + c[i,j]
-                count[r+1] = count[r+1] + 1
+                count[r] = count[r] + 1
     Bn = Bn / count
     return Bn
 
@@ -110,7 +110,7 @@ def show_result(num_epoch, show = False, save = False, path = 'result.png'):
         j = k % size_figure_grid
         ax[i, j].cla()
         temp_img = np.reshape(test_images[k], (128, 128))
-        binary_img = np.array(temp_img > 0.5, dtype=int) ###
+        binary_img = np.array(temp_img > 122.5, dtype=int) ###
         two_p_corr_list.append(two_p_corr(binary_img)) ####
         ax[i, j].imshow(temp_img, cmap='gray')
 
