@@ -110,9 +110,15 @@ def show_result(num_epoch, show = False, save = False, path = 'result.png'):
         j = k % size_figure_grid
         ax[i, j].cla()
         temp_img = np.reshape(test_images[k], (128, 128))
+<<<<<<< HEAD
         # binary_img = np.array(temp_img > 0., dtype=int) ###
         # two_p_corr_list.append(two_p_corr(binary_img)) ####
         ax[i, j].imshow(temp_img, cmap='Greys_r', interpolation='nearest')
+=======
+        binary_img = np.array(temp_img > 122.5, dtype=int) ###
+        two_p_corr_list.append(two_p_corr(binary_img)) ####
+        ax[i, j].imshow(temp_img, cmap='gray')
+>>>>>>> 7890817762e1b59a552e3a23503bbe4309513197
 
     label = 'Epoch {0}'.format(num_epoch)
     fig.text(0.5, 0.04, label, ha='center')
