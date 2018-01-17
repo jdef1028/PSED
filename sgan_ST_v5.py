@@ -9,6 +9,7 @@ import random
 from keras import backend
 import math
 import cPickle as pickle
+
 def two_p_corr(img):
     img = np.array(img > 0, dtype=int)
     d1, d2 = img.shape
@@ -97,7 +98,11 @@ def discriminator(x, isTrain=True, reuse=False):
 def show_result(num_epoch, show = False, save = False, path = 'result.png'):
     size_figure_grid = 5
     fixed_z_ = np.random.uniform(0, 1, (size_figure_grid*size_figure_grid,)+feature_vector_dim)
-    fixed_vf_ = np.random.uniform(0.15, 0.35, (size_figure_grid*size_figure_grid,)+feature_vector_dim)
+    #fixed_vf_ = np.random.uniform(0.15, 0.35, (size_figure_grid*size_figure_grid,)+feature_vector_dim)
+    fixed_vf_ = np.ones((size_figure_grid*size_figure_grid,)+feature_vector_dim)
+    vfs = np.random.uniform(0.15, 0.35, size_figure_grid*size_figure_grid)
+    for idx in xrange(vfs.shape[0]):
+        fixed_vf_[idx, :, :, :] *= vfs[idx]
     fixed_z_ = np.concatenate((fixed_z_, fixed_vf_), axis=-1)
     test_images = sess.run(G_z, {z: fixed_z_, isTrain: False})
 
@@ -468,7 +473,8 @@ for epoch in range(train_epoch):
         z_ = np.random.uniform(0, 1, (batch_size,)+feature_vector_dim)
         vf_ = np.ones((batch_size,)+feature_vector_dim[:-1]+(1,))
         for idx, ele in enumerate(trainID):
-            vf_[idx, :, :, :] *= vf_collection[ele]
+            #vf_[idx, :, :, :] *= vf_collection[ele]
+            vf_[idx, :, :, :] *= random.uniform(0.15, 0.35)
         z_ = np.concatenate((z_, vf_), axis=-1)
 
         style_image_input = style_array[trainID, :, :, :]
